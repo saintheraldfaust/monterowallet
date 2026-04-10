@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Montero Wallet",
+  "version": "1.0.0",
+  "description": "Secure, open-source crypto wallet developed by the Montero Foundation.",
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "Open Montero Wallet"
+  },
+  "icons": {
+    "16": "urban.png",
+    "48": "urban.png",
+    "128": "urban.png"
+  },
+  "permissions": [
+    "storage"
+  ]
+}
