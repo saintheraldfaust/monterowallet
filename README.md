@@ -1,4 +1,4 @@
-# MoneroWallet
+# Montero Wallet
 
 A secure, self-hosted crypto wallet that runs entirely in your browser. No servers. No accounts. Your keys, your coins.
 
