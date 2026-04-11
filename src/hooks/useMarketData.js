@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { DEFAULT_TOKENS } from '../config/chains'
 import useWalletStore from '../stores/walletStore'
+import useSettingsStore from '../stores/settingsStore'
 
 const CACHE_TTL = 60_000 // 1 minute
 let cache = null
 let cacheTime = 0
+let cachedCurrency = null
 
 /**
  * Fetches market data from CoinGecko for all tokens with a coingeckoId.
@@ -16,6 +18,7 @@ export function useMarketData() {
   const [error, setError] = useState(null)
   const timerRef = useRef(null)
   const customTokens = useWalletStore(s => s.customTokens)
+  const currency = useSettingsStore(s => s.currency)
 
   // Collect all unique CoinGecko IDs
   const coingeckoIds = useMemo(() => {
@@ -26,7 +29,8 @@ export function useMarketData() {
 
   async function fetchData() {
     const now = Date.now()
-    if (cache && now - cacheTime < CACHE_TTL) {
+    const vsCurrency = currency.toLowerCase()
+    if (cache && now - cacheTime < CACHE_TTL && cachedCurrency === vsCurrency) {
       setData(cache)
       setLoading(false)
       return
@@ -39,7 +43,7 @@ export function useMarketData() {
       const ids = coingeckoIds.join(',')
       const res = await fetch(
         `https://api.coingecko.com/api/v3/coins/markets` +
-        `?vs_currency=usd&ids=${ids}&order=market_cap_desc` +
+        `?vs_currency=${vsCurrency}&ids=${ids}&order=market_cap_desc` +
         `&per_page=100&page=1&sparkline=true&price_change_percentage=24h`
       )
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -52,6 +56,7 @@ export function useMarketData() {
       }
       cache = map
       cacheTime = Date.now()
+      cachedCurrency = vsCurrency
       setData(map)
       setError(null)
     } catch (e) {
@@ -65,7 +70,7 @@ export function useMarketData() {
     fetchData()
     timerRef.current = setInterval(fetchData, CACHE_TTL)
     return () => clearInterval(timerRef.current)
-  }, [coingeckoIds.join(',')])
+  }, [coingeckoIds.join(','), currency])
 
   /**
    * Get market data for a specific token by its coingeckoId

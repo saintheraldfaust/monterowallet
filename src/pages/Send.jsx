@@ -7,6 +7,7 @@ import useSettingsStore from '../stores/settingsStore'
 import { useBalances } from '../hooks/useBalances'
 import { CHAINS, DEFAULT_TOKENS } from '../config/chains'
 import { sendNative, sendToken, estimateNativeGas, estimateTokenGas, getNativeBalance, getProvider } from '../utils/wallet'
+import { useMarketData } from '../hooks/useMarketData'
 import TokenIcon from '../components/TokenIcon'
 
 export default function Send() {
@@ -14,6 +15,7 @@ export default function Send() {
   const wallet = useWalletStore(s => s.getActiveWallet())
   const customTokens = useWalletStore(s => s.customTokens)
   const { getBalance } = useBalances()
+  const { getMarket } = useMarketData()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -50,6 +52,10 @@ export default function Send() {
   const [gasEstimate, setGasEstimate] = useState(null)
   const [gasLoading, setGasLoading] = useState(false)
   const [nativeBalance, setNativeBalance] = useState(null)
+  const [maxLoading, setMaxLoading] = useState(false)
+
+  // Use live CoinGecko price, fallback to static priceUsd
+  const livePrice = getMarket(selectedToken.coingeckoId)?.current_price ?? selectedToken.priceUsd ?? 0
 
   const filteredSendTokens = useMemo(() => {
     if (!tokenSearch.trim()) return allTokens
@@ -122,7 +128,43 @@ export default function Send() {
     setSending(false)
   }
 
-  const setMax = () => setAmount(balance)
+  const setMax = async () => {
+    const bal = parseFloat(balance)
+    if (!bal || bal <= 0) { setAmount('0'); return }
+
+    // For native tokens (BNB, ETH), estimate gas and subtract it
+    if (selectedToken.isNative) {
+      setMaxLoading(true)
+      try {
+        const walletData = wallet.addresses[selectedToken.chain]
+        const chain = CHAINS[selectedToken.chain]
+        // Use a dummy small amount for gas estimation (full balance may fail if no gas left)
+        const estAmount = (bal * 0.5).toString()
+        const gasEst = await estimateNativeGas(chain.rpc, walletData.address, walletData.address, estAmount)
+        const gasFee = parseFloat(gasEst.feeFormatted)
+        // Add 20% buffer for gas price fluctuation
+        const gasBuffer = gasFee * 1.2
+        const maxAmount = bal - gasBuffer
+        if (maxAmount <= 0) {
+          setAmount('0')
+          setError(`Insufficient ${selectedToken.symbol} — entire balance needed for gas`)
+        } else {
+          // Use full precision, trimming trailing zeros
+          setAmount(maxAmount.toFixed(18).replace(/\.?0+$/, ''))
+          setError('')
+        }
+      } catch {
+        // Fallback: deduct a safe fixed gas buffer
+        const safeBuf = selectedToken.chain === 'bsc' ? 0.0015 : 0.005
+        const maxAmount = Math.max(bal - safeBuf, 0)
+        setAmount(maxAmount > 0 ? maxAmount.toFixed(18).replace(/\.?0+$/, '') : '0')
+      }
+      setMaxLoading(false)
+    } else {
+      // ERC20 tokens: can send entire balance
+      setAmount(balance)
+    }
+  }
 
   const inputClass = `w-full py-3.5 px-4 rounded-2xl text-sm border transition-colors ${
     theme === 'dark'
@@ -222,14 +264,14 @@ export default function Send() {
             <div className={cardClass}>
               <div className="flex items-center justify-between mb-2">
                 <label className={`text-xs font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>AMOUNT</label>
-                <button onClick={setMax} className="text-xs font-semibold text-primary">
-                  MAX: {parseFloat(balance).toFixed(4)} {selectedToken.symbol}
+                <button onClick={setMax} disabled={maxLoading} className={`text-xs font-semibold text-primary ${maxLoading ? 'opacity-50' : ''}`}>
+                  {maxLoading ? 'Calculating...' : `MAX: ${parseFloat(balance).toFixed(4)} ${selectedToken.symbol}`}
                 </button>
               </div>
               <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className={inputClass} />
-              {amount && parseFloat(amount) > 0 && selectedToken.priceUsd > 0 && (
+              {amount && parseFloat(amount) > 0 && livePrice > 0 && (
                 <p className={`text-xs mt-2 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                  ≈ ${(parseFloat(amount) * selectedToken.priceUsd).toFixed(2)} USD
+                  ≈ ${(parseFloat(amount) * livePrice).toFixed(2)} USD
                 </p>
               )}
             </div>
@@ -252,7 +294,7 @@ export default function Send() {
             ? parseFloat(amount) + (gasFee || 0)
             : gasFee || 0
           const hasEnoughGas = nativeBal !== null && gasFee !== null ? nativeBal >= totalNativeCost : true
-          const usdValue = parseFloat(amount) * (selectedToken.priceUsd || 0)
+          const usdValue = parseFloat(amount) * livePrice
 
           return (
             <div className="space-y-4">

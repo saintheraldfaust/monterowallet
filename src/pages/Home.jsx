@@ -10,6 +10,23 @@ import { DEFAULT_TOKENS, CHAINS } from '../config/chains'
 import TokenRow from '../components/TokenRow'
 import TransactionHistory from '../components/TransactionHistory'
 
+function formatTotalBalance(n, symbol = '$') {
+  if (n === undefined || n === null || isNaN(n)) return `${symbol}0.00`
+  const abs = Math.abs(n)
+  if (abs >= 1_000_000_000_000) return `${symbol}${(n / 1_000_000_000_000).toFixed(2)}T`
+  if (abs >= 1_000_000_000) return `${symbol}${(n / 1_000_000_000).toFixed(2)}B`
+  if (abs >= 1_000_000) return `${symbol}${(n / 1_000_000).toFixed(2)}M`
+  return `${symbol}${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}`
+}
+
+function getBalanceFontSize(n) {
+  const abs = Math.abs(n || 0)
+  if (abs >= 1_000_000) return 'text-2xl'       // abbreviated with M/B/T — smaller
+  if (abs >= 100_000) return 'text-2xl'          // 100K-999K with commas
+  if (abs >= 10_000) return 'text-3xl'           // 10K-99K
+  return 'text-3xl'                               // default
+}
+
 const NETWORK_FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'bsc', label: 'BSC' },
@@ -62,8 +79,8 @@ export default function Home() {
           <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-white/5" />
 
           <p className="text-blue-200 text-xs font-medium tracking-wider mb-1">TOTAL BALANCE</p>
-          <h2 className="text-white text-3xl font-extrabold mb-1 tracking-tight">
-            {hideBalances ? '••••••' : `${currencySymbol}${totalUsd.toFixed(2)}`}
+          <h2 className={`text-white font-extrabold mb-1 tracking-tight truncate max-w-full ${hideBalances ? 'text-3xl' : getBalanceFontSize(totalUsd)}`}>
+            {hideBalances ? '••••••' : formatTotalBalance(totalUsd, currencySymbol)}
           </h2>
           <p className="text-blue-200/60 text-xs font-medium mb-6">
             {wallet.addresses?.ethereum?.address?.slice(0, 8)}...{wallet.addresses?.ethereum?.address?.slice(-6)}

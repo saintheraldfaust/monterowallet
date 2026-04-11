@@ -101,6 +101,7 @@ export function useTransactions(limit = 15) {
             value: isErc20 ? erc20.value : (native?.value || tx.value || '0'),
             tokenSymbol: isErc20 ? erc20.token_symbol : (chain.id === 'bsc' ? 'BNB' : 'ETH'),
             tokenDecimal: isErc20 ? Number(erc20.token_decimals) : 18,
+            contractAddress: isErc20 ? erc20.address?.toLowerCase() : null,
             timeStamp: new Date(tx.block_timestamp).getTime() / 1000,
             gasUsed: tx.receipt_gas_used,
             gasPrice: tx.gas_price,

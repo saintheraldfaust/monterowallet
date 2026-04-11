@@ -14,7 +14,7 @@ export default function TokenIcon({ icon, symbol, size = 40 }) {
         <img
           src={icon}
           alt={symbol}
-          className="w-full h-full object-cover"
+          className="w-[80%] h-[80%] object-contain"
           onError={(e) => {
             e.target.style.display = 'none'
             e.target.nextSibling.style.display = 'flex'

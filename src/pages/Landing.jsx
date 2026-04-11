@@ -1,12 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import useSettingsStore from '../stores/settingsStore'
-import { HiOutlineArrowRight, HiOutlineSun, HiOutlineMoon } from 'react-icons/hi2'
+import { HiOutlineArrowRight } from 'react-icons/hi2'
 
 export default function Landing() {
   const navigate = useNavigate()
   const theme = useSettingsStore(s => s.theme) || 'dark' // Fallback if not initialized
-  const toggleTheme = useSettingsStore(s => s.toggleTheme)
 
   return (
     <div className={`min-h-screen relative overflow-hidden transition-colors duration-1000 ${
@@ -78,18 +77,6 @@ export default function Landing() {
               Launch App
               <HiOutlineArrowRight className="w-5 h-5" />
             </button>
-            <button 
-              onClick={() => {
-                alert("Extension coming soon to the Chrome Web Store!")
-              }}
-              className={`flex items-center justify-center px-8 py-4 rounded-full text-lg font-bold transition-all active:scale-95 ${
-                theme === 'dark' 
-                  ? 'bg-slate-900 border border-slate-800 text-white hover:bg-slate-800' 
-                  : 'bg-slate-100 border border-slate-200 text-black hover:bg-slate-200'
-              }`}
-            >
-              Install Extension
-            </button>
           </motion.div>
         </div>
 
@@ -118,18 +105,6 @@ export default function Landing() {
         <p className="mt-2">Code is law. Not your keys, not your coins.</p>
       </footer>
 
-      {/* Floating Theme Toggle */}
-      <button 
-        onClick={toggleTheme}
-        className={`fixed bottom-6 right-6 p-3.5 rounded-full shadow-2xl transition-all active:scale-95 z-50 ${
-          theme === 'dark' 
-            ? 'bg-slate-800 text-white hover:bg-slate-700' 
-            : 'bg-white text-slate-800 border border-slate-200 hover:bg-slate-100'
-        }`}
-        aria-label="Toggle Theme"
-      >
-        {theme === 'dark' ? <HiOutlineSun size={24} /> : <HiOutlineMoon size={24} />}
-      </button>
     </div>
   )
 }

@@ -45,7 +45,7 @@ export const DEFAULT_TOKENS = [
     contractAddress: '0x82c400bE990EfE6CD44B5E572c1a4Cf8D3B935b3',
     chain: 'bsc',
     decimals: 18,
-    icon: 'https://img.cryptorank.io/coins/usdd1654065498498.png',
+    icon: '/usddlogo.png',
     coingeckoId: 'usdd',
     priceUsd: 0.000006727,
     isDefault: true,

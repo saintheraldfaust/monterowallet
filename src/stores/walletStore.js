@@ -96,6 +96,14 @@ const useWalletStore = create(
         }
       }),
 
+      signOut: () => set({
+        wallets: [],
+        activeWalletId: null,
+        customTokens: [],
+        balances: {},
+        initialized: false,
+      }),
+
       getActiveWallet: () => {
         const { wallets, activeWalletId } = get()
         return wallets.find(w => w.id === activeWalletId) || null

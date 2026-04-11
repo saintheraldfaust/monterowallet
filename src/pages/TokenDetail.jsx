@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { HiOutlineArrowLeft, HiOutlineArrowUpRight, HiOutlineClipboardDocument } from 'react-icons/hi2'
 import useSettingsStore from '../stores/settingsStore'
@@ -6,6 +7,8 @@ import { useMarketData } from '../hooks/useMarketData'
 import { CHAINS } from '../config/chains'
 import TokenIcon from '../components/TokenIcon'
 import Sparkline from '../components/Sparkline'
+import TransactionHistory from '../components/TransactionHistory'
+import { useTransactions } from '../hooks/useTransactions'
 import { useCopy } from '../hooks/useCopy'
 
 export default function TokenDetail() {
@@ -18,8 +21,27 @@ export default function TokenDetail() {
   const { getBalance } = useBalances()
   const { getMarket } = useMarketData()
   const { copied, copy } = useCopy()
+  const { transactions, loading: txLoading, refresh: txRefresh } = useTransactions(50)
 
   const token = location.state?.token
+
+  // Filter transactions that belong to this specific token
+  const tokenTxs = useMemo(() => {
+    if (!token || !transactions.length) return []
+    return transactions.filter(tx => {
+      // Must be on the same chain
+      if (tx.chain !== token.chain) return false
+      // Native token: match non-ERC20 txs on this chain
+      if (token.isNative) return !tx.isErc20
+      // ERC20 token: match by contract address
+      if (token.contractAddress && tx.contractAddress) {
+        return tx.contractAddress === token.contractAddress.toLowerCase()
+      }
+      // Fallback: match by token symbol
+      return tx.tokenSymbol?.toUpperCase() === token.symbol?.toUpperCase()
+    })
+  }, [transactions, token])
+
   if (!token) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -39,13 +61,13 @@ export default function TokenDetail() {
 
   const fmtNum = (n) => {
     if (!n && n !== 0) return 'N/A'
-    if (n >= 1e12) return `$${(n / 1e12).toFixed(2)}T`
-    if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`
-    if (n >= 1e6) return `$${(n / 1e6).toFixed(2)}M`
-    if (n >= 1000) return `$${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
-    if (n >= 1) return `$${n.toFixed(2)}`
-    if (n >= 0.01) return `$${n.toFixed(4)}`
-    return `$${n.toFixed(8)}`
+    if (n >= 1e12) return `${currencySymbol}${(n / 1e12).toFixed(2)}T`
+    if (n >= 1e9) return `${currencySymbol}${(n / 1e9).toFixed(2)}B`
+    if (n >= 1e6) return `${currencySymbol}${(n / 1e6).toFixed(2)}M`
+    if (n >= 1000) return `${currencySymbol}${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+    if (n >= 1) return `${currencySymbol}${n.toFixed(2)}`
+    if (n >= 0.01) return `${currencySymbol}${n.toFixed(4)}`
+    return `${currencySymbol}${n.toFixed(8)}`
   }
 
   const cardClass = `rounded-2xl p-5 ${theme === 'dark' ? 'bg-slate-800/50' : 'bg-white'}`
@@ -169,6 +191,22 @@ export default function TokenDetail() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Transaction History for this token */}
+        <div className="mt-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-sm">Transaction History</h3>
+            <button
+              onClick={txRefresh}
+              className={`text-xs font-medium px-3 py-1 rounded-lg transition-colors ${
+                txLoading ? 'text-primary animate-pulse' : theme === 'dark' ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              {txLoading ? 'Refreshing...' : 'Refresh'}
+            </button>
+          </div>
+          <TransactionHistory transactions={tokenTxs} loading={txLoading} />
         </div>
       </div>
     </div>

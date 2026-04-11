@@ -45,6 +45,7 @@ export default function Settings() {
   const getMnemonic = useWalletStore(s => s.getMnemonic)
   const renameWallet = useWalletStore(s => s.renameWallet)
   const deleteWallet = useWalletStore(s => s.deleteWallet)
+  const signOut = useWalletStore(s => s.signOut)
   const navigate = useNavigate()
   const { copied, copy } = useCopy()
 
@@ -114,20 +115,30 @@ export default function Settings() {
           </div>
 
           {/* Danger zone */}
-          {wallets.length > 1 && (
-            <>
-              <p className={`text-xs font-semibold mb-2 px-1 text-red-500/60`}>DANGER ZONE</p>
-              <div className={cardClass}>
-                <SettingRow
-                  icon={HiOutlineTrash}
-                  label="Delete Current Wallet"
-                  onClick={() => { if (confirm('Are you sure? This cannot be undone.')) deleteWallet(wallet.id) }}
-                  danger
-                  theme={theme}
-                />
-              </div>
-            </>
-          )}
+          <p className={`text-xs font-semibold mb-2 px-1 text-red-500/60`}>DANGER ZONE</p>
+          <div className={cardClass}>
+            {wallets.length > 1 && (
+              <SettingRow
+                icon={HiOutlineTrash}
+                label="Delete Current Wallet"
+                onClick={() => { if (confirm('Are you sure? This cannot be undone.')) deleteWallet(wallet.id) }}
+                danger
+                theme={theme}
+              />
+            )}
+            <SettingRow
+              icon={HiOutlineArrowRightOnRectangle}
+              label="Remove Wallet From Device"
+              onClick={() => {
+                if (confirm('This will remove all wallets from this device. Make sure you have backed up your recovery phrase. Your crypto is safe on the blockchain — you can restore anytime with your phrase.\n\nContinue?')) {
+                  signOut()
+                  navigate('/welcome')
+                }
+              }}
+              danger
+              theme={theme}
+            />
+          </div>
         </div>
       </div>
     )

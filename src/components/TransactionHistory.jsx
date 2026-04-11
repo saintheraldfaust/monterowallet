@@ -154,9 +154,10 @@ export default function TransactionHistory({ transactions, loading }) {
           theme === 'dark' ? 'bg-[#0f172a]' : 'bg-slate-50'
         }`}>
           {/* Top bar — fixed */}
-          <div className={`shrink-0 flex items-center gap-3 px-4 py-4 border-b ${
+          <div className={`shrink-0 border-b ${
             theme === 'dark' ? 'bg-[#0f172a] border-slate-800' : 'bg-slate-50 border-slate-200'
           }`}>
+            <div className="flex items-center gap-3 px-4 py-4 max-w-lg mx-auto">
             <button
               onClick={handleClose}
               className={`p-2 -ml-1 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-slate-800' : 'hover:bg-slate-200'}`}
@@ -164,10 +165,12 @@ export default function TransactionHistory({ transactions, loading }) {
               <HiArrowLeft className="w-5 h-5" />
             </button>
             <h3 className="text-base font-bold">Transaction Details</h3>
+            </div>
           </div>
 
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto overscroll-contain">
+           <div className="max-w-lg mx-auto">
             {/* Hero section */}
             <div className="flex flex-col items-center justify-center px-6 pt-8 pb-8">
               <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-5 ${
@@ -277,6 +280,7 @@ export default function TransactionHistory({ transactions, loading }) {
                 <HiOutlineArrowTopRightOnSquare className="w-5 h-5" />
               </a>
             </div>
+           </div>
           </div>
         </div>
       )}
